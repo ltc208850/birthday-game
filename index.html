@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
+<title>🎂宝贝生日快乐·专属消消乐</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Microsoft YaHei"}
+body{
+  background:linear-gradient(135deg,#ffe0ec,#fff5f8,#ffd6e8);
+  padding:12px;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+h2{
+  text-align:center;
+  color:#e64980;
+  margin-bottom:6px;
+  font-size:20px;
+}
+.info{
+  text-align:center;
+  margin-bottom:10px;
+  font-size:15px;
+  color:#c92a60;
+  line-height:1.5;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  max-width:480px;
+  margin:0 auto;
+  position:relative;
+  z-index:2;
+}
+.card{
+  aspect-ratio:1/1;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  position:relative;
+  overflow:hidden;
+  background-image:url("emoji_all.jpg");
+  background-size:300% 300%;
+  transition:transform .25s ease, opacity .3s ease;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.card[data-id="0"] {background-position:0% 0%;}
+.card[data-id="1"] {background-position:50% 0%;}
+.card[data-id="2"] {background-position:100% 0%;}
+.card[data-id="3"] {background-position:0% 50%;}
+.card[data-id="4"] {background-position:50% 50%;}
+.card[data-id="5"] {background-position:100% 50%;}
+.card[data-id="6"] {background-position:0% 100%;}
+.card[data-id="7"] {background-position:50% 100%;}
+.card[data-id="8"] {background-position:100% 100%;}
+
+.card.active{
+  box-shadow:0 0 0 3px #ff4d94;
+  transform:scale(1.06);
+  z-index:2;
+}
+.card.remove{
+  opacity:0;
+  transform:scale(0);
+  pointer-events:none;
+}
+
+/* 气球背景 */
+.balloon{
+  position:fixed;
+  bottom:-120px;
+  width:46px;
+  height:58px;
+  border-radius:50%;
+  opacity:.85;
+  animation:fly linear infinite;
+  z-index:1;
+  pointer-events:none;
+}
+.balloon::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-40px;
+  width:1px;
+  height:40px;
+  background:rgba(255,105,180,.45);
+}
+@keyframes fly{
+  0%{transform:translateY(0) rotate(-4deg)}
+  50%{transform:translateY(-50vh) rotate(4deg)}
+  100%{transform:translateY(-110vh) rotate(-4deg)}
+}
+
+/* 爱心特效 */
+.heart{
+  position:absolute;
+  font-size:22px;
+  pointer-events:none;
+  animation:heartUp .9s ease-out forwards;
+  z-index:3;
+}
+@keyframes heartUp{
+  0%{transform:translate(-50%,0) scale(.6);opacity:0}
+  20%{opacity:1}
+  100%{transform:translate(-50%,-80px) scale(1.2);opacity:0}
+}
+
+/* 情话小弹窗 */
+.love-tip{
+  position:fixed;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(.8);
+  background:#fff;
+  color:#e64980;
+  padding:14px 20px;
+  border-radius:14px;
+  box-shadow:0 6px 20px rgba(230,73,128,.25);
+  font-size:16px;
+  z-index:10;
+  opacity:0;
+  pointer-events:none;
+  animation:tipIn 1.4s ease forwards;
+}
+@keyframes tipIn{
+  0%{opacity:0;transform:translate(-50%,-40%) scale(.8)}
+  20%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  80%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-60%) scale(1)}
+}
+
+/* 通关弹窗 */
+.popup{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.popup.show{display:flex;}
+.popup-content{
+  background:#fff;
+  padding:30px 22px;
+  border-radius:20px;
+  text-align:center;
+  color:#e64980;
+  font-size:19px;
+  line-height:1.8;
+  max-width:92%;
+  animation:pop .4s ease;
+}
+@keyframes pop{
+  from{transform:scale(.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+#closeBtn{
+  margin-top:18px;
+  padding:9px 22px;
+  border:none;
+  background:#ff8fab;
+  color:#fff;
+  border-radius:99px;
+  font-size:16px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<h2>🎂宝贝生日快乐·专属消消乐</h2>
+
+<div class="info">
+  分数：<span id="score">0</span>　
+  剩余：<span id="remain">36</span>　
+  点击两个相邻方块交换，3个相同表情包连成一线即可消除
+</div>
+
+<div class="grid" id="box"></div>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    🎉恭喜通关！<br><br>
+    生日快乐，我最爱的女孩。<br>
+    这一局消消乐，就像我们的故事：<br>
+    每一次相遇，都是心动；<br>
+    每一次消除，都是我想给你的快乐。<br><br>
+    新的一岁，我不想只做一时心动。<br>
+    我想做你身边那个，<br>
+    一直陪你、一直偏爱你的人。<br><br>
+    往后的日子，<br>
+    我想和你一起，把平凡的每天，<br>
+    都过成甜甜的样子。<br><br>
+    <button id="closeBtn">收下我的生日告白 💖</button>
+  </div>
+</div>
+
+<script>
+const ROW = 6;
+const COL = 6;
+const TOTAL = ROW * COL;
+const EMOJI_COUNT = 9;
+
+const box = document.getElementById('box');
+const scoreDom = document.getElementById('score');
+const remainDom = document.getElementById('remain');
+const popup = document.getElementById('popup');
+const closeBtn = document.getElementById('closeBtn');
+
+let board = [];
+let cards = [];
+let selectedIdx = null;
+let score = 0;
+let busy = false;
+
+const loveMessages = [
+  "和你在一起的每一天，都值得被纪念。",
+  "你一出现，空气都变甜了。",
+  "我不是喜欢很多人，我只是特别喜欢你。",
+  "生日快乐，我的偏爱和例外都给你。",
+  "想把所有温柔，都留给你一个人。",
+  "你是我藏不住的心动，也是我明目张胆的偏爱。",
+  "新的一岁，愿你被爱包围，也被我偏爱到底。",
+  "你开心，我就开心；你难过，我会陪着你。",
+  "不是一时心动，是每一次见到你，都还是会心动。",
+  "我想做你永远的靠山，也做你永远的甜心。",
+  "生日快乐宝贝，往后岁岁年年，我都想陪你。",
+  "你是我今天，也是明天，最重要的人。"
+];
+
+// 生成气球
+function createBalloons(){
+  const colors = ["#ff9ec7","#ffb3d1","#ff7096","#ffc1e3","#ff6fa5"];
+  for(let i=0;i<10;i++){
+    const b = document.createElement("div");
+    b.className = "balloon";
+    b.style.left = Math.random()*100 + "vw";
+    b.style.background = colors[i%colors.length];
+    b.style.animationDuration = (10 + Math.random()*8) + "s";
+    b.style.animationDelay = (-Math.random()*12) + "s";
+    document.body.appendChild(b);
+  }
+}
+
+// 初始化36宫格
+function initBoard(){
+  board = [];
+  cards = [];
+  box.innerHTML = "";
+
+  for(let i=0;i<TOTAL;i++){
+    const type = Math.floor(Math.random()*EMOJI_COUNT);
+    board.push(type);
+
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.dataset.index = i;
+    cards.push(div);
+    box.appendChild(div);
+  }
+
+  renderBoard();
+  updateInfo();
+}
+
+function renderBoard(){
+  for(let i=0;i<TOTAL;i++){
+    const type = board[i];
+    cards[i].dataset.id = type;
+    cards[i].classList.remove('remove','active');
+  }
+}
+
+function isAdjacent(a,b){
+  const rowA = Math.floor(a/COL);
+  const colA = a % COL;
+  const rowB = Math.floor(b/COL);
+  const colB = b % COL;
+  return (Math.abs(rowA-rowB)===1 && colA===colB) ||
+         (Math.abs(colA-colB)===1 && rowA===rowB);
+}
+
+function swap(a,b){
+  const temp = board[a];
+  board[a] = board[b];
+  board[b] = temp;
+}
+
+function findMatches(){
+  const matched = new Set();
+
+  for(let r=0;r<ROW;r++){
+    for(let c=0;c<COL-2;c++){
+      const i1 = r*COL + c;
+      const i2 = r*COL + c+1;
+      const i3 = r*COL + c+2;
+      if(board[i1]===board[i2] && board[i2]===board[i3]){
+        matched.add(i1);
+        matched.add(i2);
+        matched.add(i3);
+      }
+    }
+  }
+
+  for(let c=0;c<COL;c++){
+    for(let r=0;r<ROW-2;r++){
+      const i1 = r*COL + c;
+      const i2 = (r+1)*COL + c;
+      const i3 = (r+2)*COL + c;
+      if(board[i1]===board[i2] && board[i2]===board[i3]){
+        matched.add(i1);
+        matched.add(i2);
+        matched.add(i3);
+      }
+    }
+  }
+
+  return [...matched];
+}
+
+function showHearts(indexes){
+  indexes.forEach(i=>{
+    const rect = cards[i].getBoundingClientRect();
+    const heart = document.createElement("div");
+    heart.className = "heart";
+    heart.innerText = ["❤","💕","💖","💗"][Math.floor(Math.random()*4)];
+    heart.style.left = (rect.left + rect.width/2) + "px";
+    heart.style.top = (rect.top + rect.height/2) + "px";
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),900);
+  });
+}
+
+function showLoveTip(){
+  const tip = document.createElement("div");
+  tip.className = "love-tip";
+  tip.innerText = loveMessages[Math.floor(Math.random()*loveMessages.length)];
+  document.body.appendChild(tip);
+  setTimeout(()=>tip.remove(),1400);
+}
+
+function removeMatches(matches){
+  showHearts(matches);
+  showLoveTip();
+
+  matches.forEach(i=>{
+    cards[i].classList.add('remove');
+  });
+
+  score += matches.length * 10;
+  setTimeout(()=>{
+    matches.forEach(i=>{
+      board[i] = Math.floor(Math.random()*EMOJI_COUNT);
+    });
+    renderBoard();
+    updateInfo();
+    busy = false;
+
+    const remain = cards.filter(c=>!c.classList.contains('remove')).length;
+    if(remain <= 0){
+      setTimeout(()=>{
+        popup.classList.add('show');
+      },400);
+    }
+  },350);
+}
+
+function clickCell(idx){
+  if(busy) return;
+  if(cards[idx].classList.contains('remove')) return;
+
+  if(selectedIdx === null){
+    selectedIdx = idx;
+    cards[idx].classList.add('active');
+  }else{
+    cards[selectedIdx].classList.remove('active');
+
+    if(selectedIdx === idx){
+      selectedIdx = null;
+      return;
+    }
+
+    if(isAdjacent(selectedIdx, idx)){
+      swap(selectedIdx, idx);
+      renderBoard();
+
+      const matches = findMatches();
+      if(matches.length > 0){
+        busy = true;
+        removeMatches(matches);
+      }
+    }
+
+    selectedIdx = null;
+  }
+}
+
+function updateInfo(){
+  scoreDom.innerText = score;
+  const remain = cards.filter(c=>!c.classList.contains('remove')).length;
+  remainDom.innerText = remain;
+}
+
+// 绑定点击事件
+function bindEvents(){
+  cards.forEach((card,i)=>{
+    card.addEventListener('click',(e)=>{
+      e.preventDefault();
+      clickCell(i);
+    });
+  });
+}
+
+closeBtn.addEventListener('click',()=>{
+  popup.classList.remove('show');
+});
+
+// 启动游戏
+createBalloons();
+initBoard();
+bindEvents();
+</script>
+
+</body>
+</html>
